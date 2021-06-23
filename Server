@@ -1,0 +1,215 @@
+import java.net.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;     // //The JOptionPane class is used to provide standard dialog box
+                                     //such as message dialog box, confirm dialog box and input dialog box. 
+                                     //These dialog boxes are used to display information or get input from the user. 
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;                                    
+
+import java.io.*;
+
+public class Server extends JFrame
+{   
+    //variables
+    ServerSocket server;  
+    Socket socket;
+    BufferedReader br;
+    PrintWriter out;
+
+    //Declare Swing Components to create GUI
+
+    private JLabel heading=new JLabel("Server Area");
+    private JTextArea messageArea = new JTextArea();
+    private JTextField messageInput = new JTextField();
+    private Font font = new Font("Roboto",Font.BOLD,20); //here Roboto is the font family and after which 
+                                                           //theme of font and then size of font
+    
+   //constructor of Server
+   public Server()
+   {
+
+    try {
+        server=new ServerSocket(7778);
+        System.out.println("Server is ready to accept connection");
+        System.out.println("waiting...");
+        socket = server.accept();
+
+
+        br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        out = new PrintWriter(socket.getOutputStream());
+
+        createGUI();
+        handleEvents();
+
+        startReading();
+       // startWriting();
+
+
+    } catch(Exception e){
+        e.printStackTrace();
+    }
+      
+   }
+
+   private void handleEvents() {
+
+    messageInput.addKeyListener(new KeyListener(){     // here keylistner acts as a interface 
+                                                       // so we have to  implements all the methods 
+
+        @Override
+        public void keyTyped(KeyEvent e) {
+            
+            
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+           
+            
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+            // System.out.println("Key released " + e.getKeyCode());
+              // keyCode of enter key is 10
+            if(e.getKeyCode() == 10){
+                String contentToSend = messageInput.getText();
+                messageArea.append("Me :"+ contentToSend+"\n");
+                out.println(contentToSend);
+                out.flush();
+                messageInput.setText(""); 
+                messageInput.requestFocus();
+            }
+        }
+
+    });
+}
+
+
+   // create meathod for createGUI
+   private void createGUI() {
+    //GUI code
+
+    this.setTitle("Server Messanger[END]");
+    this.setSize(600,700);
+    this.setLocationRelativeTo(null);
+    this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    
+    //coding for components
+    heading.setFont(font);
+    messageArea.setFont(font);
+    messageInput.setFont(font);
+    
+    heading.setIcon(new ImageIcon("chat1.jpg"));
+    heading.setHorizontalTextPosition(SwingConstants.CENTER);
+    heading.setVerticalTextPosition(SwingConstants.BOTTOM);
+    heading.setHorizontalAlignment(SwingConstants.CENTER);
+    heading.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+    messageArea.setEditable(false);
+    messageInput.setHorizontalAlignment(SwingConstants.CENTER);
+
+    // now we set the layout of frame
+    // Borderlayout generally divides our frame into five regions.north,south,east,west and center
+    this.setLayout(new BorderLayout()); 
+
+    // adding the components to frame
+    this.add(heading,BorderLayout.NORTH);
+    JScrollPane jScrollPane= new JScrollPane(messageArea);
+    this.add(jScrollPane,BorderLayout.CENTER);
+    this.add(messageInput,BorderLayout.SOUTH);
+
+
+
+
+    this.setVisible(true);
+ }
+
+  
+    public void startReading()
+    {
+       // make a thread which reads the data
+       //multithreading using lambda expression
+       Runnable r1=()-> {
+         System.out.println("reader started...");  
+
+         try{
+         while(true)
+         {
+            
+            String msg = br.readLine();
+            if(msg.equals("exit")){
+                System.out.println("Client terminated the chat");
+                JOptionPane.showMessageDialog(this, "Client Terminated The chat");
+                messageInput.setEnabled(false);
+                
+                socket.close();
+                break;
+            }
+
+            //System.out.println("Client : "+ msg);
+            messageArea.append("Client : " + msg + "\n"); 
+
+         }
+        }catch (Exception e){
+          //  e.printStackTrace();
+          System.out.println("Connection is closed");
+        }
+       };
+
+       //to start the created thred
+       new Thread(r1).start();
+    }
+
+    // public void startWriting()
+    // {
+    //   // make another thread used to take data from user and send data to client
+    //   //multithreading using lambda expressions
+    //   Runnable r2=()-> {
+    //       System.out.println("Writer started.....");
+
+    //       try{
+    //     while( !socket.isClosed()){
+           
+
+    //             BufferedReader br1 = new BufferedReader(new InputStreamReader(System.in));
+
+    //             String content = br1.readLine();
+
+    //             out.println( content);
+    //               out.flush();
+                  
+    //               if(content.equals("exit")){
+    //                 socket.close();
+    //                 break;
+    //             }
+                  
+            
+    //     }
+    //     System.out.println("Connection is closed");
+    // } catch(Exception e){
+    //     e.printStackTrace();
+    // }
+    //   };
+    //    // to start the created thread
+    //    new Thread(r2).start();
+
+    // }
+
+
+    public static void main(String[] args) {
+        System.out.println("This is server...going to start server");
+        //object of constructor Server
+        new Server();
+
+    }
+}
